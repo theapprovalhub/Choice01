@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<title>Application Status — Choice Properties</title>
+<script src="/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="/css/main.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/css/apply.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0a1628;--gold:#c9a84c;--text:#1a1a1a;--muted:#666;--border:#e0e0e0;--bg:#f5f6fa}
+body{font-family: var(--font-base);background:#f5f6fa;color:#1a1a1a;min-height:100vh}
+.topbar{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);border-bottom:1px solid #e4e7ef;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.topbar-logo-mark{width:30px;height:30px;background:#0f1117;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.topbar-logo-text{font-family: var(--font-base);font-weight:700;font-size:14.5px;color:#0f1117;letter-spacing:-0.01em;}
+.topbar-ref{color:#9ca3af;font-size:.72rem;font-family:monospace;}
+.container{max-width:760px;margin:0 auto;padding:28px 16px}
+.lookup-card{background:#fff;border:1px solid var(--color-border);border-radius:10px;padding:32px;text-align:center;margin-bottom:24px}
+.lookup-card h1{font-size:1.4rem;color:var(--navy);margin-bottom:8px}
+.lookup-card p{color:var(--muted);font-size:.88rem;margin-bottom:24px}
+.input-row{display:flex;gap:10px;max-width:440px;margin:0 auto}
+.input-row input{flex:1;border:1px solid var(--color-border);border-radius:6px;padding:11px 14px;font-size:.9rem;outline:none}
+.input-row input:focus{border-color:var(--navy)}
+.btn{background:linear-gradient(135deg,var(--navy),#1d3a6e);color:#fff;border:none;border-radius:6px;padding:11px 22px;font-size:.85rem;font-weight:700;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;transition:opacity .2s}
+.btn:hover{opacity:.88}.btn:disabled{opacity:.4}
+
+/* Status card */
+.status-card{background:#fff;border:1px solid var(--color-border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.status-header{background:var(--navy);padding:24px 28px;color:#fff}
+.status-header .ref{font-size:.7rem;color:rgba(255,255,255,.5);font-family:monospace;margin-bottom:4px}
+.status-header .name{font-size:1.3rem;font-weight:700}
+.status-header .prop{font-size:.82rem;color:rgba(255,255,255,.6);margin-top:4px}
+.progress-bar{display:flex;padding:20px 28px;background:#fff;border-bottom:1px solid var(--color-border);gap:0}
+.step{flex:1;text-align:center;position:relative}
+.step:not(:last-child)::after{content:'';position:absolute;top:14px;left:50%;right:-50%;height:2px;background:var(--color-border);z-index:0}
+.step.done::after,.step.active::after{background:var(--navy)}
+.step-dot{width:28px;height:28px;border-radius:50%;background:var(--color-border);margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;position:relative;z-index:1;color:#fff}
+.step.done .step-dot{background:var(--navy)}
+.step.active .step-dot{background:var(--color-brand-light)}
+.step-label{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.step.active .step-label{color:var(--navy);font-weight:700}
+.info-body{padding:24px 28px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.info-item{padding:12px 14px;background:var(--bg);border-radius:6px}
+.info-label{font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+.info-value{font-size:.88rem;font-weight:600;color:var(--text)}
+.status-pill{display:inline-block;padding:4px 12px;border-radius:4px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.pill-pending{background:#fef3c7;color:#92400e}
+.pill-approved{background:#d1fae5;color:#065f46}
+.pill-denied{background:#fee2e2;color:#991b1b}
+.pill-under_review{background:#dbeafe;color:#1e40af}
+.pill-paid{background:#d1fae5;color:#065f46}
+.pill-unpaid{background:#fee2e2;color:#991b1b}
+.pill-sent{background:#dbeafe;color:#1e40af}
+.pill-signed{background:#d1fae5;color:#065f46}
+.pill-awaiting_co_sign{background:#fef3c7;color:#92400e}
+.pill-none{background:#f1f5f9;color:#475569}
+
+/* Callouts */
+.callout{border-left:3px solid var(--navy);padding:14px 16px;margin:16px 0;background:#fff;border:1px solid var(--color-border);border-left:3px solid var(--navy);border-radius:0 6px 6px 0}
+.callout.gold{border-left-color:var(--color-brand-light)}
+.callout.green{border-left-color:#059669}
+.callout h4{font-size:.82rem;font-weight:700;margin-bottom:6px}
+.callout p{font-size:.8rem;color:var(--muted);line-height:1.6}
+.cta-btn{display:inline-block;background:var(--color-brand-light);color:var(--navy);text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:700;font-size:.85rem;letter-spacing:.05em;text-transform:uppercase;margin:8px 4px}
+
+/* Messages */
+.msg-thread{margin-top:16px}
+.msg{padding:12px 14px;border-radius:6px;margin-bottom:8px;font-size:.82rem;line-height:1.6}
+.msg-admin{background:#f0f4ff;border-left:3px solid var(--navy)}
+.msg-tenant{background:#f9f9f9;border-left:3px solid var(--color-brand-light)}
+.msg-meta{font-size:.65rem;color:var(--muted);margin-bottom:4px}
+.reply-area{margin-top:12px;display:flex;gap:8px}
+.reply-area textarea{flex:1;border:1px solid var(--color-border);border-radius:6px;padding:10px;font-size:.82rem;height:70px;outline:none;font-family:inherit}
+.reply-area button{align-self:flex-end}
+
+.err-box{background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:14px 16px;color:#991b1b;font-size:.85rem;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="topbar-logo" href="../index.html">
+    <div class="topbar-logo-mark">
+      <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M3 9.5L12 3L21 9.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9.5Z" fill="white" opacity="0.9"/><circle cx="12" cy="11" r="2.5" fill="rgba(37,99,235,0.9)"/></svg>
+    </div>
+    <span class="topbar-logo-text">Choice Properties</span>
+  </a>
+  <span class="topbar-ref" id="ref-label"></span>
+  <a href="../index.html" style="color:rgba(255,255,255,.55);font-size:12px;text-decoration:none;margin-left:auto"><i class="fas fa-home" style="margin-right:4px"></i> Browse Listings</a>
+</div>
+
+<div class="container">
+  <!-- Lookup form (shown if no app_id in URL) -->\n  <div class=\"lookup-card\" id=\"lookup-section\">\n    <h1>Track Your Application</h1>\n    <p>Enter your Application ID to view your real-time status, messages, and lease documents.</p>\n\n    <!-- Shown only when no ?id= is in the URL — helps users who arrive cold -->\n    <div id=\"no-id-hint\" style=\"display:none;background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 16px;margin-bottom:18px;text-align:left;font-size:.82rem;color:#1e40af;line-height:1.6\">\n      <strong>📧 Check your email</strong> — your Application ID was sent to you immediately after you submitted your application. It looks like <span style=\"font-family:monospace;font-weight:700\">CP-20240115-ABC123</span>.<br>\n      Can't find the email? Use the <em>Resend my Application ID</em> option below.\n    </div>\n\n    <div class=\"input-row\">\n      <input type=\"text\" id=\"app-id-input\" placeholder=\"CP-20240115-ABC123\" style=\"text-transform:uppercase\" onkeydown=\"if(event.key==='Enter')lookup()\">\n      <button class=\"btn\" onclick=\"lookup()\">Track</button>\n    </div>\n    <div id=\"lookup-err\" style=\"margin-top:12px;color:#991b1b;font-size:.82rem\"></div>
+
+    <!-- ID Recovery -->
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:10px">Can't find your Application ID? We can look it up by your email address.</p>
+      <div id="recovery-section">
+        <button onclick="document.getElementById('recovery-form').style.display='block';this.style.display='none'" style="background:none;border:1px solid var(--border);border-radius:6px;padding:8px 18px;font-size:.8rem;color:var(--muted);cursor:pointer">
+          📧 Resend my Application ID
+        </button>
+      </div>
+      <div id="recovery-form" style="display:none">
+        <div class="input-row" style="margin-top:8px">
+          <input type="email" id="recovery-email" placeholder="Your email address" style="text-transform:none">
+          <button class="btn" onclick="recoverById()" style="font-size:.75rem;padding:11px 14px">Send</button>
+        </div>
+        <div id="recovery-msg" style="margin-top:8px;font-size:.8rem"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard (shown after lookup) -->
+  <div id="dashboard" style="display:none"></div>
+</div>
+
+<script src="/js/cp-api.js"></script>
+<script>
+function escapeHTML(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+const params = new URLSearchParams(location.search);
+const urlId  = params.get('id') || params.get('app_id');
+if (urlId) {
+  document.getElementById('app-id-input').value = urlId;
+  lookup();
+} else {
+  // No app_id in URL — user arrived cold, show the guidance hint
+  document.getElementById('no-id-hint').style.display = 'block';
+}
+
+async function lookup() {
+  const appId = document.getElementById('app-id-input').value.trim().toUpperCase();
+  if (!appId) return;
+  document.getElementById('lookup-err').textContent = '';
+  document.getElementById('ref-label').textContent = appId;
+  history.replaceState({}, '', '?id=' + appId);
+
+  const result = await CP.Applications.getStatus(appId);
+  if (!result?.success) {
+    document.getElementById('lookup-err').textContent = result?.error || 'Application not found. Check your ID and try again.';
+    return;
+  }
+
+  document.getElementById('lookup-section').style.display = 'none';
+  renderDashboard(result.application, result.messages || []);
+  document.getElementById('dashboard').style.display = 'block';
+
+  // Realtime
+  if (CONFIG.FEATURES.REALTIME_UPDATES) {
+    // Use scoped subscriptions — one for status changes, one for new messages.
+    // Both are filtered to this specific app_id only.
+    CP.subscribeToApplication(appId, () => lookup());
+    CP.subscribeToMessages(appId, () => lookup());
+  }
+}
+
+function pillClass(val) { return 'pill-' + (val || 'none').replace(/\s/g,'_'); }
+
+function renderDashboard(app, msgs) {
+  const step = app.move_in_status === 'completed' ? 5
+             : (app.lease_status === 'co_signed') ? 4
+             : (app.lease_status === 'signed' || app.lease_status === 'awaiting_co_sign') ? 3
+             : app.status === 'approved' ? 3
+             : (app.payment_status === 'paid' || app.status === 'under_review') ? 2
+             : 1;
+
+  document.getElementById('dashboard').innerHTML = `
+    <div class="status-card">
+      <div class="status-header">
+        <div class="ref">${app.app_id}</div>
+        <div class="name">${app.first_name} ${app.last_name}</div>
+        <div class="prop">${app.property_address || ''}</div>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-bar">
+        ${[['1','Submitted'],['2','Fee Paid'],['3','Approved'],['4','Lease Signed'],['5','Moved In']].map(([n,label],i)=>`
+          <div class="step ${step > i+1 ? 'done' : step === i+1 ? 'active' : ''}">
+            <div class="step-dot">${step > i+1 ? '✓' : n}</div>
+            <div class="step-label">${label}</div>
+          </div>`).join('')}
+      </div>
+
+      <div class="info-body">
+        <div class="info-grid">
+          <div class="info-item"><div class="info-label">Application Status</div>
+            <div class="info-value"><span class="status-pill ${pillClass(app.status)}">${CP.UI.fmt.status(app.status)}</span></div></div>
+          <div class="info-item"><div class="info-label">Application Fee</div>
+            <div class="info-value"><span class="status-pill ${pillClass(app.payment_status)}">${CP.UI.fmt.status(app.payment_status)}</span></div></div>
+          <div class="info-item"><div class="info-label">Lease Status</div>
+            <div class="info-value"><span class="status-pill ${pillClass(app.lease_status)}">${CP.UI.fmt.status(app.lease_status)}</span></div></div>
+          <div class="info-item"><div class="info-label">Submitted</div>
+            <div class="info-value">${CP.UI.fmt.date(app.created_at)}</div></div>
+          ${app.monthly_rent ? `<div class="info-item"><div class="info-label">Monthly Rent</div><div class="info-value">${CP.UI.fmt.currency(app.monthly_rent)}</div></div>` : ''}
+          ${app.lease_start_date ? `<div class="info-item"><div class="info-label">Lease Start</div><div class="info-value">${CP.UI.fmt.date(app.lease_start_date)}</div></div>` : ''}
+        </div>
+
+        <!-- Contextual callout based on status -->
+        ${app.status === 'pending' && app.payment_status === 'unpaid' ? `
+          <div class="callout gold"><h4>⏳ Awaiting Application Fee</h4><p>Our leasing team will contact you within 24 hours via text to arrange your application fee. Once received, your application will advance to formal review.</p></div>` : ''}
+        ${app.payment_status === 'paid' && app.status === 'pending' ? `
+          <div class="callout green"><h4>✓ Fee Received — Under Active Review</h4><p>Your application fee has been received and your file is now being reviewed by our leasing team. You will be notified of a decision within 2–3 business days.</p></div>` : ''}
+        ${app.status === 'approved' && app.lease_status === 'none' ? `
+          <div class="callout green"><h4>✓ Congratulations — Application Approved!</h4><p>Your application has been approved. Our leasing team is preparing your lease agreement and will send it to your email address shortly. Please ensure your inbox is accessible.</p></div>` : ''}
+        ${app.lease_status === 'sent' ? `
+          <div class="callout"><h4>📋 Lease Agreement Ready for Signature</h4><p>Your lease agreement has been sent to your email. Please review and sign it within 48 hours to secure your unit.</p>
+          <a href="lease.html?id=${app.app_id}" class="cta-btn">Review &amp; Sign Lease</a></div>` : ''}
+        ${app.lease_status === 'awaiting_co_sign' ? `
+          <div class="callout gold"><h4>⏳ Awaiting Co-Applicant Signature</h4>
+          <p>Your signature has been recorded. Your co-applicant (<strong>${app.co_applicant_email || 'co-applicant'}</strong>) has been sent a signing link to their email address. The lease will be fully executed once they sign.</p>
+          <p style="margin-top:8px;font-size:.78rem;color:var(--muted)">If you are the co-applicant, please check your email for a message with the subject <em>"Co-Applicant Lease Signature"</em> — it contains your personal signing link.</p></div>` : ''}
+        ${app.lease_status === 'co_signed' ? `
+          <div class="callout green"><h4>✓ Lease Fully Executed — Tenancy Confirmed</h4><p>All parties have signed. Your tenancy is confirmed. Our team will coordinate move-in payment and key handoff. Rent: ${CP.UI.fmt.currency(app.monthly_rent)}/mo · Start: ${CP.UI.fmt.date(app.lease_start_date)}</p></div>` : ''}
+        ${app.lease_status === 'signed' && !app.has_co_applicant ? `
+          <div class="callout green"><h4>✓ Lease Executed — Tenancy Confirmed</h4><p>Your lease has been signed and your tenancy is confirmed. Our team will coordinate move-in payment and key handoff. Rent: ${CP.UI.fmt.currency(app.monthly_rent)}/mo · Start: ${CP.UI.fmt.date(app.lease_start_date)}</p></div>` : ''}
+        ${app.status === 'denied' ? `
+          <div class="callout" style="border-left-color:#991b1b"><h4>Application Not Approved</h4><p>Thank you for applying. Unfortunately we are unable to offer tenancy at this time. You may apply for any other Choice Properties listing within 30 days at no additional fee.</p></div>` : ''}
+        ${app.status === 'waitlisted' ? `
+          <div class="callout gold"><h4>⏸ You're on the Waitlist</h4><p>Your application is currently on our waitlist. This means we have a qualified applicant ahead of you for this unit. If that applicant does not proceed, you will be contacted promptly. No action is required from you at this time.</p></div>` : ''}
+        ${app.status === 'withdrawn' ? `
+          <div class="callout" style="border-left-color:#64748b"><h4>Application Withdrawn</h4><p>This application has been marked as withdrawn. If you believe this is an error or would like to reactivate your application, please contact our leasing team directly${(CONFIG.COMPANY_PHONE && !CONFIG.COMPANY_PHONE.includes('YOUR')) ? ' at ' + CONFIG.COMPANY_PHONE : ''}.</p></div>` : ''}
+
+        <!-- Messages -->
+        ${CONFIG.FEATURES.MESSAGING ? `
+        <div style="margin-top:20px">
+          <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">Messages from Your Leasing Team</div>
+          <div class="msg-thread" id="msg-thread">
+            ${msgs.length === 0 ? '<div style="color:var(--muted);font-size:.8rem;padding:10px 0">No messages yet.</div>' :
+              msgs.map(m=>`<div class="msg msg-${m.sender}">
+                <div class="msg-meta">${escapeHTML(m.sender_name || (m.sender === 'admin' ? 'Leasing Team' : m.sender))} · ${CP.UI.fmt.dateTime(m.created_at)}</div>
+                ${escapeHTML(m.message)}
+              </div>`).join('')}
+          </div>
+          <div class="reply-area">
+            <textarea id="reply-input" placeholder="Reply to your leasing team…"></textarea>
+            <button class="btn" id="reply-btn" data-appid="${app.app_id}" data-name="${escapeHTML(app.first_name + ' ' + app.last_name)}">Send</button>
+          </div>
+        </div>` : ''}
+
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:12px;font-size:.75rem;color:var(--muted)">
+      ${(CONFIG.COMPANY_PHONE && !CONFIG.COMPANY_PHONE.includes('YOUR') && CONFIG.COMPANY_EMAIL && !CONFIG.COMPANY_EMAIL.includes('your@'))
+        ? `Questions? Text: ${CONFIG.COMPANY_PHONE} &middot; ${CONFIG.COMPANY_EMAIL}<br>` : ''}
+      <a href="../index.html" style="color:var(--muted)">&#8592; Back to listings</a>
+    </div>`;
+}
+
+async function recoverById() {
+  const email = document.getElementById('recovery-email').value.trim().toLowerCase();
+  const msgEl = document.getElementById('recovery-msg');
+  if (!email || !email.includes('@')) { msgEl.style.color='#991b1b'; msgEl.textContent='Please enter a valid email address.'; return; }
+  msgEl.style.color = 'var(--muted)';
+  msgEl.textContent = 'Looking up your application…';
+
+  // Use the multi-result RPC so applicants with more than one application can choose
+  const { data: apps, error } = await CP.sb().rpc('get_apps_by_email', { p_email: email });
+  if (error || !apps || !apps.length) {
+    msgEl.style.color = '#991b1b';
+    msgEl.textContent = 'No application found for that email address. Please double-check and try again.';
+    return;
+  }
+
+  if (apps.length === 1) {
+    // Single application — send recovery email as before
+    CP.Applications.sendRecoveryEmail(email, apps[0].app_id, window.location.origin).catch(() => {});
+    msgEl.style.color = '#065f46';
+    msgEl.textContent = '✓ Your Application ID has been sent to your inbox. Please check your email.';
+    document.getElementById('recovery-email').value = '';
+    return;
+  }
+
+  // Multiple applications — show a picker so the applicant can choose which one
+  msgEl.textContent = '';
+  const pickerHtml = `
+    <div style="margin-top:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:#1e293b">
+        We found ${apps.length} applications for that email. Which one do you need?
+      </div>
+      ${apps.map(a => {
+        const date = new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+        const addr = a.property_address || 'Property';
+        const st   = a.status ? a.status.replace(/_/g,' ') : '';
+        return `<button onclick="sendRecovery('${email}','${a.app_id}')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;margin-bottom:8px;cursor:pointer;font-size:13px;line-height:1.5">
+          <span style="font-weight:600">${addr}</span><br>
+          <span style="color:#64748b">Submitted ${date} · Status: ${st}</span>
+        </button>`;
+      }).join('')}
+      <div style="font-size:12px;color:#94a3b8;margin-top:6px">
+        Your Application ID will be emailed to you after selection.
+      </div>
+    </div>`;
+  msgEl.innerHTML = pickerHtml;
+}
+
+async function sendRecovery(email, appId) {
+  const msgEl = document.getElementById('recovery-msg');
+  msgEl.innerHTML = '<span style="color:var(--muted)">Sending…</span>';
+  await CP.Applications.sendRecoveryEmail(email, appId, window.location.origin).catch(() => {});
+  msgEl.innerHTML = '';
+  msgEl.style.color = '#065f46';
+  msgEl.textContent = '✓ Your Application ID has been sent to your inbox. Please check your email.';
+  document.getElementById('recovery-email').value = '';
+}
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('#reply-btn');
+  if (!btn) return;
+  const appId = btn.dataset.appid;
+  const name  = btn.dataset.name;
+  const ta    = document.getElementById('reply-input');
+  const msg   = ta.value.trim();
+  if (!msg) return;
+  btn.disabled = true;
+  const res = await CP.Applications.tenantReply(appId, msg, name);
+  btn.disabled = false;
+  if (res?.success) { ta.value = ''; CP.UI.toast('Message sent.', 'success'); lookup(); }
+  else CP.UI.toast('Error sending message. Please try again.', 'error');
+});
+</script>
+</body>
+</html>

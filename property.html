@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" id="sb-preconnect"><!-- set by config.js -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Property — Choice Properties</title>
+  <meta name="description" content="View property details and apply online.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <meta property="og:type"        content="website">
+  <meta property="og:site_name"   content="Choice Properties">
+  <meta property="og:title"       id="ogTitle"       content="Rental Property — Choice Properties">
+  <meta property="og:description" id="ogDescription" content="View property details and apply online.">
+  <meta property="og:url"         id="ogUrl"         content="">
+  <meta property="og:image"       id="ogImage"       content="">
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       id="twTitle"       content="Rental Property">
+  <meta name="twitter:description" id="twDescription" content="View property details and apply online.">
+  <meta name="twitter:image"       id="twImage"       content="">
+  <!-- Leaflet for property mini-map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/property.css">
+  <!-- Styles in property.css -->
+<script src="/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/js/cp-api.js"></script>
+</head>
+<body>
+
+<!-- ── Mobile Drawer Overlay ── -->
+
+<div class="nav-drawer-overlay" id="drawerOverlay"></div>
+
+<!-- ── Mobile Drawer ── -->
+
+<nav class="nav-drawer" id="navDrawer">
+  <div class="nav-drawer-header">
+    <a href="/index.html" class="nav-logo">
+      <div class="nav-logo-mark" style="background:var(--ink);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M3 9.5L12 3L21 9.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9.5Z" fill="white" opacity="0.9"/><circle cx="12" cy="11" r="2.5" fill="rgba(37,99,235,0.9)"/></svg>
+      </div>
+      <div>
+        <div class="nav-logo-text">Choice Properties</div>
+        <div class="nav-logo-sub">Rental Marketplace</div>
+      </div>
+    </a>
+    <button class="nav-drawer-close" id="drawerClose"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="nav-drawer-body">
+    <a href="/index.html" class="nav-drawer-link"><i class="fas fa-arrow-left"></i> Back to Listings</a>
+    <a href="/how-it-works.html" class="nav-drawer-link"><i class="fas fa-info-circle"></i> How It Works</a>
+    <a href="/about.html" class="nav-drawer-link"><i class="fas fa-building"></i> About Us</a>
+    <a href="/landlord/register.html" class="nav-drawer-link"><i class="fas fa-plus-circle"></i> List a Property</a>
+    <a href="/how-to-apply.html" class="nav-drawer-link"><i class="fas fa-question-circle"></i> How to Apply</a>
+    <a href="/faq.html" class="nav-drawer-link"><i class="fas fa-life-ring"></i> FAQ</a>
+    <a href="/apply/dashboard.html" target="_blank" class="nav-drawer-link"><i class="fas fa-file-alt"></i> Track My Application</a>
+  </div>
+  <div class="nav-drawer-cta">
+    <a href="#" class="btn btn-primary" id="drawerAuthLink">Landlord Login</a>
+  </div>
+  <div class="nav-drawer-footer"><a id="drawerFooterEmail" href="mailto:support@choiceproperties.com">support@choiceproperties.com</a></div>
+</nav>
+
+<!-- ── Nav ── -->
+
+<nav class="nav" id="mainNav">
+  <div class="nav-inner">
+    <a href="/index.html" class="nav-logo">
+      <div class="nav-logo-mark" style="background:var(--ink);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M3 9.5L12 3L21 9.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9.5Z" fill="white" opacity="0.9"/><circle cx="12" cy="11" r="2.5" fill="rgba(37,99,235,0.9)"/></svg>
+      </div>
+      <div>
+        <div class="nav-logo-text">Choice Properties</div>
+        <div class="nav-logo-sub">Rental Marketplace</div>
+      </div>
+    </a>
+    <div class="nav-links" id="navLinks">
+      <a href="/index.html" class="nav-link">← All Listings</a>
+      <a href="/how-to-apply.html" class="nav-link">How to Apply</a>
+      <a href="/faq.html" class="nav-link">FAQ</a>
+      <a href="/apply/dashboard.html" target="_blank" class="nav-link nav-link--track">
+        <i class="fas fa-file-alt" style="font-size:12px"></i> Track Application
+      </a>
+      <a href="#" class="nav-link nav-link--cta" id="navAuthLink">List Your Property</a>
+    </div>
+    <button class="nav-mobile-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+  </div>
+</nav>
+
+<!-- ── Gallery ── -->
+
+<div class="gallery" id="gallery">
+  <img class="gallery-main" id="galleryMain" src="" alt="Property photo">
+  <div class="gallery-overlay"></div>
+  <button class="gallery-nav-btn prev" id="galleryPrev"><i class="fas fa-chevron-left"></i></button>
+  <button class="gallery-nav-btn next" id="galleryNext"><i class="fas fa-chevron-right"></i></button>
+  <div class="gallery-count" id="galleryCount">
+    <i class="fas fa-images"></i> <span id="galleryCurrent">1</span> / <span id="galleryTotal">1</span>
+  </div>
+  <div class="gallery-thumbs" id="galleryThumbs"></div>
+  <!-- Expand / lightbox trigger -->
+  <button id="galleryExpand" class="gallery-expand-btn">
+    <i class="fas fa-expand-alt"></i> View All Photos
+  </button>
+</div>
+
+<!-- ── Lightbox ── -->
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose"><i class="fas fa-times"></i></button>
+  <button class="lightbox-nav prev" id="lightboxPrev"><i class="fas fa-chevron-left"></i></button>
+  <img class="lightbox-img" id="lightboxImg" src="" alt="Property photo">
+  <button class="lightbox-nav next" id="lightboxNext"><i class="fas fa-chevron-right"></i></button>
+  <div class="lightbox-counter" id="lightboxCounter">1 / 1</div>
+</div>
+
+<!-- ── Detail Content ── -->
+
+<div class="property-detail">
+  <div class="container">
+    <div class="detail-layout">
+
+  <!-- Main column -->
+  <div class="detail-main" id="detailMain">
+    <div class="detail-breadcrumb">
+      <a href="/index.html">Listings</a>
+      <i class="fas fa-chevron-right" style="font-size:10px"></i>
+      <span id="breadcrumbCity">Loading…</span>
+    </div>
+
+    <div class="detail-header">
+      <div class="detail-price" id="detailPrice">
+        <div class="skeleton" style="height:44px;width:200px;border-radius:8px"></div>
+      </div>
+      <div class="detail-title" id="detailTitle"></div>
+      <div class="detail-address" id="detailAddress"></div>
+    </div>
+
+    <div class="detail-meta-row" id="detailMeta"></div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">About This Property</div>
+      <div class="detail-desc" id="detailDesc">Loading property details…</div>
+    </div>
+
+    <div class="detail-section" id="amenitiesSection" style="display:none">
+      <div class="detail-section-title">Amenities & Features</div>
+      <div class="amenities-grid" id="amenitiesGrid"></div>
+    </div>
+
+    <div class="detail-section" id="utilitiesSection" style="display:none">
+      <div class="detail-section-title">Utilities & Parking</div>
+      <div class="amenities-grid" id="utilitiesGrid"></div>
+    </div>
+
+    <div class="detail-section" id="leaseSection">
+      <div class="detail-section-title">Lease Information</div>
+      <div class="amenities-grid" id="leaseGrid"></div>
+    </div>
+
+    <!-- Map section — uses Leaflet if lat/lng available, fallback iframe -->
+    <div class="detail-section">
+      <div class="detail-section-title">Location</div>
+      <div class="map-container" id="mapContainer">
+        <div id="mapFallback" style="height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:var(--s-2);color:#8892a2">
+          <i class="fas fa-map-marker-alt" style="font-size:32px;color:#2563eb"></i>
+          <span id="mapAddressLabel" style="font-size:14px"></span>
+        </div>
+      </div>
+      <p id="mapNeighborhood" style="font-size:13px;color:#8892a2;margin-top:8px;display:none">
+        <i class="fas fa-info-circle" style="color:var(--gold)"></i>
+        <span id="mapNeighborhoodText"></span>
+      </p>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="detail-sidebar">
+    <!-- Apply Card -->
+    <div class="apply-card">
+      <div class="apply-card-header">
+        <div class="apply-card-price" id="sidebarPrice">—</div>
+        <div class="apply-card-avail" id="sidebarAvail">
+          <i class="fas fa-circle"></i> Checking availability…
+        </div>
+      </div>
+      <div class="apply-card-body">
+        <div class="apply-cost-row">
+          <span class="apply-cost-label">Monthly Rent</span>
+          <span class="apply-cost-value" id="sidebarRent">—</span>
+        </div>
+        <div class="apply-cost-row">
+          <span class="apply-cost-label">Security Deposit</span>
+          <span class="apply-cost-value" id="sidebarDeposit">—</span>
+        </div>
+        <div class="apply-cost-row">
+          <span class="apply-cost-label">Application Fee</span>
+          <span class="apply-cost-value" id="sidebarFee">—</span>
+        </div>
+        <div class="apply-cost-row" id="sidebarMoveInRow" style="display:none">
+          <span class="apply-cost-label">Available From</span>
+          <span class="apply-cost-value" id="sidebarMoveIn">—</span>
+        </div>
+        <a href="#" class="apply-btn" id="applyBtn">
+          Apply Now <i class="fas fa-paper-plane" style="font-size:14px"></i>
+        </a>
+        <p class="apply-disclaimer">
+          <i class="fas fa-lock" style="color:var(--gold)"></i>
+          Your info is encrypted & secure. Fee collected after review.
+        </p>
+        <a href="/apply/dashboard.html"
+           target="_blank"
+           class="apply-track-link">
+          <i class="fas fa-search"></i> Already applied? Track your application →
+        </a>
+      </div>
+    </div>
+
+    <!-- Landlord Profile Card -->
+    <a href="#" class="landlord-card" id="landlordCard" style="display:none;">
+      <div class="landlord-card-avatar" id="landlordAvatar">?</div>
+      <div class="landlord-card-info">
+        <div class="landlord-card-label">Listed by</div>
+        <div class="landlord-card-name" id="landlordName">—</div>
+        <div class="landlord-card-tagline" id="landlordTagline"></div>
+      </div>
+      <div class="landlord-card-verified" id="landlordVerified" style="display:none"><i class="fas fa-check"></i></div>
+      <div class="landlord-card-arrow"><i class="fas fa-chevron-right"></i></div>
+    </a>
+    <!-- Landlord phone — shown only when landlord has a phone number on file -->
+    <div id="landlordPhoneRow" style="display:none;align-items:center;gap:8px;padding:10px 14px;background:#f8f9fa;border:1px solid #e4e7ef;border-radius:6px;font-size:13px;color:#374151;margin-top:8px">
+      <i class="fas fa-phone" style="color:#6b7280;font-size:12px"></i>
+      <a id="landlordPhoneLink" href="#" style="color:#1e40af;font-weight:600;text-decoration:none"></a>
+    </div>
+
+    <!-- Contact Card -->
+    <div class="contact-card">
+      <div class="contact-card-title">Questions? Message the Landlord</div>
+      <div class="share-row">
+        <button class="share-btn" id="savePropBtn">
+          <i class="far fa-heart"></i> Save
+        </button>
+        <button class="share-btn" onclick="shareProp()">
+          <i class="fas fa-share-alt"></i> Share
+        </button>
+      </div>
+      <div class="contact-form-group">
+        <label class="form-label">Your Name</label>
+        <input type="text" class="form-input" id="inqName" placeholder="Full name">
+      </div>
+      <div class="contact-form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="inqEmail" placeholder="your@email.com">
+      </div>
+      <div class="contact-form-group">
+        <label class="form-label">Phone (optional)</label>
+        <input type="tel" class="form-input" id="inqPhone" placeholder="(555) 000-0000">
+      </div>
+      <div class="contact-form-group">
+        <label class="form-label">Message</label>
+        <textarea class="form-textarea" id="inqMessage" rows="3" placeholder="I'm interested in this property and have a few questions…"></textarea>
+      </div>
+      <button class="btn btn-primary btn-full" id="sendInquiryBtn">
+        <i class="fas fa-paper-plane"></i> Send Message
+      </button>
+    </div><!-- /.contact-card -->
+  </div><!-- /.detail-sidebar -->
+
+</div><!-- /.detail-layout -->
+  </div><!-- /.container -->
+</div><!-- /.property-detail -->
+
+<!-- ── Footer ── -->
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand-name">Choice Properties</div>
+        <p class="footer-brand-desc">America's trusted rental marketplace.</p>
+        <a href="mailto:support@choiceproperties.com" class="footer-contact-item" data-cfg-email><i class="fas fa-envelope"></i> support@choiceproperties.com</a>
+        <a href="#" class="footer-contact-item" data-cfg-phone><i class="fas fa-phone"></i> Contact Us</a>
+      </div>
+      <div>
+        <div class="footer-heading">Renters</div>
+        <ul class="footer-links">
+          <li><a href="/index.html">Browse Listings</a></li>
+          <li><a href="/how-to-apply.html">How to Apply</a></li>
+          <li><a href="/faq.html">FAQ</a></li>
+          <li><a href="/apply/dashboard.html" target="_blank">Track My Application</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-heading">Landlords</div>
+        <ul class="footer-links">
+          <li><a href="/landlord/register.html">List a Property</a></li>
+          <li><a href="/landlord/login.html">Landlord Login</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-heading">Company</div>
+        <ul class="footer-links">
+          <li><a href="/about.html">About Us</a></li>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Choice Properties. All rights reserved.</span>
+      <div class="footer-bottom-links">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+<script type="module">
+import { supabase, buildApplyURL, incrementCounter } from './js/cp-api.js';
+import { updateNav as _updateNav } from './js/cp-api.js';
+
+// Extended nav init — wires both navAuthLink and drawerAuthLink, populates contacts
+async function updateNav() {
+  await _updateNav();
+  // Wire drawerAuthLink to match navAuthLink after _updateNav resolves
+  const navLink    = document.getElementById('navAuthLink');
+  const drawerLink = document.getElementById('drawerAuthLink');
+  if (navLink && drawerLink) {
+    drawerLink.href = navLink.href;
+    drawerLink.textContent = navLink.textContent;
+  }
+  // Populate CONFIG-driven contacts
+  if (window.CONFIG) {
+    const df = document.getElementById('drawerFooterEmail');
+    if (df) { df.href = 'mailto:' + CONFIG.COMPANY_EMAIL; df.textContent = CONFIG.COMPANY_EMAIL; }
+    document.querySelectorAll('[data-cfg-email]').forEach(el => { el.href = 'mailto:' + CONFIG.COMPANY_EMAIL; el.textContent = CONFIG.COMPANY_EMAIL; });
+    document.querySelectorAll('[data-cfg-phone]').forEach(el => { el.href = 'tel:' + CONFIG.COMPANY_PHONE.replace(/\D/g,''); el.textContent = CONFIG.COMPANY_PHONE; });
+  }
+}
+
+updateNav();
+setupMobileDrawer();
+setupNavScroll();
+
+const params     = new URLSearchParams(window.location.search);
+const propertyId = params.get('id');
+if (!propertyId) { window.location.href = '/index.html'; }
+
+let currentProperty = null;
+let photoIndex      = 0;
+let allPhotos       = [];
+const savedIds = new Set(JSON.parse(localStorage.getItem('cp_saved') || '[]'));
+
+loadProperty(propertyId);
+
+async function loadProperty(id) {
+  try {
+    const { data: prop, error } = await supabase
+      .from('properties')
+      .select('*, landlords(id, business_name, contact_name, phone, email, avatar_url, tagline, verified)')
+      .eq('id', id)
+      .single();
+    if (error || !prop) throw new Error('Not found');
+    currentProperty = prop;
+    await incrementCounter('properties', id, 'views_count');
+    renderProperty(prop);
+  } catch(e) {
+    showToast('Property not found.', 'error');
+    setTimeout(() => window.location.href = '/index.html', 2000);
+  }
+}
+
+function renderProperty(p) {
+  document.title = `${p.title} — Choice Properties`;
+
+  // OG meta
+  const ogImg  = CONFIG.img(p.photo_urls?.[0] || '', 'og') || '/assets/placeholder-property.jpg';
+  const ogDesc = `${p.bedrooms === 0 ? 'Studio' : (p.bedrooms + ' bed')} · ${p.bathrooms} bath · $${p.monthly_rent.toLocaleString()}/mo · ${p.address}, ${p.city}, ${p.state}`;
+  ['ogTitle','twTitle'].forEach(id => setMeta(id, `${p.title} — Choice Properties`));
+  ['ogDescription','twDescription'].forEach(id => setMeta(id, ogDesc));
+  ['ogImage','twImage'].forEach(id => setMeta(id, ogImg));
+  setMeta('ogUrl', window.location.href);
+  document.querySelector('meta[name="description"]')?.setAttribute('content', ogDesc);
+
+  // Structured data — RealEstateListing schema for Google Rich Results
+  const sd = document.createElement('script');
+  sd.type = 'application/ld+json';
+  sd.textContent = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "RealEstateListing",
+    "name": p.title,
+    "description": p.description,
+    "url": window.location.href,
+    "image": p.photo_urls?.[0] ? CONFIG.img(p.photo_urls[0], 'og') : undefined,
+    "offers": {
+      "@type": "Offer",
+      "price": p.monthly_rent,
+      "priceCurrency": "USD",
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "price": p.monthly_rent,
+        "priceCurrency": "USD",
+        "unitText": "MONTH"
+      }
+    },
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": p.address,
+      "addressLocality": p.city,
+      "addressRegion": p.state,
+      "postalCode": p.zip,
+      "addressCountry": "US"
+    }
+  });
+  document.head.appendChild(sd);
+
+  document.getElementById('breadcrumbCity').textContent = `${p.city}, ${p.state}`;
+
+  // Gallery
+  allPhotos = p.photo_urls?.length ? p.photo_urls : ['/assets/placeholder-property.jpg'];
+  renderGallery(allPhotos);
+
+  // Header
+  document.getElementById('detailPrice').innerHTML = `$${p.monthly_rent.toLocaleString()}<span>/month</span>`;
+  document.getElementById('detailTitle').textContent = p.title;
+  document.getElementById('detailAddress').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${p.address}, ${p.city}, ${p.state} ${p.zip || ''}`;
+
+  // Listed-by attribution
+  if (p.landlords) {
+    const ll = p.landlords;
+    const name = ll.business_name || ll.contact_name;
+    const attr = document.createElement('div');
+    attr.style.cssText = 'font-size:13.5px;color:#8892a2;margin-top:var(--s-2);display:flex;align-items:center;gap:6px';
+    attr.innerHTML = `<i class="fas fa-user" style="color:#2563eb;font-size:11px"></i> Listed by <a href="/landlord/profile.html?id=${ll.id}" style="color:#2563eb;font-weight:600">${name}</a>`;
+    document.getElementById('detailAddress').insertAdjacentElement('afterend', attr);
+  }
+
+  // Meta row
+  const metas = [];
+  if (p.bedrooms != null) metas.push({ label:'Bedrooms', value: p.bedrooms === 0 ? 'Studio' : p.bedrooms, icon:'fa-bed' });
+  if (p.bathrooms)        metas.push({ label:'Bathrooms', value: p.bathrooms, icon:'fa-bath' });
+  if (p.square_footage)   metas.push({ label:'Sq. Ft.', value: p.square_footage.toLocaleString(), icon:'fa-ruler-combined' });
+  if (p.property_type)    metas.push({ label:'Type', value: capitalize(p.property_type), icon:'fa-home' });
+  if (p.pets_allowed != null) metas.push({ label:'Pets', value: p.pets_allowed ? 'Allowed' : 'No Pets', icon:'fa-paw' });
+  document.getElementById('detailMeta').innerHTML = metas.map(m => `
+    <div class="detail-meta-item">
+      <div class="detail-meta-label">${m.label}</div>
+      <div class="detail-meta-value"><i class="fas ${m.icon}"></i>${m.value}</div>
+    </div>`).join('');
+
+  document.getElementById('detailDesc').textContent = p.description || 'No additional description provided.';
+
+  if (p.amenities?.length) {
+    document.getElementById('amenitiesSection').style.display = '';
+    document.getElementById('amenitiesGrid').innerHTML = p.amenities.map(a =>
+      `<div class="amenity-item"><i class="fas fa-check"></i>${a}</div>`).join('');
+  }
+
+  const utilRows = [];
+  if (p.utilities_included?.length) utilRows.push(...p.utilities_included.map(u =>
+    `<div class="amenity-item"><i class="fas fa-bolt"></i>${u} Included</div>`));
+  if (p.parking) utilRows.push(`<div class="amenity-item"><i class="fas fa-car"></i>Parking: ${p.parking}</div>`);
+  if (utilRows.length) {
+    document.getElementById('utilitiesSection').style.display = '';
+    document.getElementById('utilitiesGrid').innerHTML = utilRows.join('');
+  }
+
+  const leaseItems = [];
+  if (p.lease_terms?.length) leaseItems.push(`<div class="amenity-item"><i class="fas fa-file-contract"></i>${p.lease_terms.join(', ')}</div>`);
+  if (p.security_deposit) leaseItems.push(`<div class="amenity-item"><i class="fas fa-shield-alt"></i>Deposit: $${p.security_deposit.toLocaleString()}</div>`);
+  if (p.showing_instructions) leaseItems.push(`<div class="amenity-item" style="grid-column:1/-1"><i class="fas fa-key"></i><span><strong>Showings:</strong> ${p.showing_instructions}</span></div>`);
+  document.getElementById('leaseGrid').innerHTML = leaseItems.join('');
+
+  // Map — Leaflet if lat/lng, fallback to Google embed
+  renderMap(p);
+
+  // Sidebar
+  document.getElementById('sidebarPrice').innerHTML = `$${p.monthly_rent.toLocaleString()}<span>/month</span>`;
+  const availNow = !p.available_date || new Date(p.available_date) <= new Date();
+  document.getElementById('sidebarAvail').innerHTML = `<i class="fas fa-circle" style="color:${availNow?'#1a7f5a':'var(--gold)'}"></i> ${availNow ? 'Available Now' : 'Available ' + formatDate(p.available_date)}`;
+  document.getElementById('sidebarRent').textContent    = `$${p.monthly_rent.toLocaleString()}`;
+  document.getElementById('sidebarDeposit').textContent = p.security_deposit ? `$${p.security_deposit.toLocaleString()}` : 'Contact landlord';
+  document.getElementById('sidebarFee').textContent     = (p.application_fee != null && p.application_fee > 0) ? `$${p.application_fee}` : 'Free';
+  if (p.available_date) {
+    document.getElementById('sidebarMoveInRow').style.display = '';
+    document.getElementById('sidebarMoveIn').textContent = formatDate(p.available_date);
+  }
+
+  // Landlord card
+  if (p.landlords) {
+    const ll = p.landlords;
+    const name = ll.business_name || ll.contact_name;
+    const card = document.getElementById('landlordCard');
+    card.href = `/landlord/profile.html?id=${ll.id}`;
+    card.style.display = 'flex';
+    document.getElementById('landlordName').textContent = name;
+    if (ll.tagline) document.getElementById('landlordTagline').textContent = ll.tagline;
+    else document.getElementById('landlordTagline').textContent = 'View profile →';
+    const avatarEl = document.getElementById('landlordAvatar');
+    if (ll.avatar_url) avatarEl.innerHTML = `<img src="${CONFIG.img(ll.avatar_url,'avatar')}" alt="${name}">`;
+    else avatarEl.textContent = name.charAt(0).toUpperCase();
+    if (ll.verified) document.getElementById('landlordVerified').style.display = 'flex';
+    if (ll.phone) {
+      const phoneRow  = document.getElementById('landlordPhoneRow');
+      const phoneLink = document.getElementById('landlordPhoneLink');
+      phoneLink.textContent = ll.phone;
+      phoneLink.href = `tel:${ll.phone.replace(/\D/g, '')}`;
+      phoneRow.style.display = 'flex';
+    }
+  }
+
+  // Apply button — build URL with full property context for form prefill
+  const applyURL = buildApplyURL(p);
+  document.getElementById('applyBtn').href = applyURL;
+
+  // Guard apply button for non-active listings
+  if (p.status !== 'active') {
+    const applyBtn = document.getElementById('applyBtn');
+    applyBtn.removeAttribute('href');
+    applyBtn.style.pointerEvents = 'none';
+    applyBtn.style.opacity       = '0.5';
+    applyBtn.style.cursor        = 'not-allowed';
+    applyBtn.innerHTML = `<i class="fas fa-ban" style="font-size:14px"></i> ${p.status === 'rented' ? 'No Longer Available' : 'Not Currently Available'}`;
+    document.getElementById('sidebarAvail').innerHTML = `<i class="fas fa-circle" style="color:#c0392b"></i> ${p.status === 'rented' ? 'Rented' : 'Unavailable'}`;
+  }
+
+  // Save button state
+  const saveBtn = document.getElementById('savePropBtn');
+  if (savedIds.has(p.id)) saveBtn.innerHTML = '<i class="fas fa-heart" style="color:var(--crimson)"></i> Saved';
+  saveBtn.addEventListener('click', () => toggleSave(p.id, saveBtn));
+}
+
+/* ── Leaflet mini-map ── */
+function renderMap(p) {
+  const container = document.getElementById('mapContainer');
+  if (p.lat && p.lng) {
+    const lat = parseFloat(p.lat);
+    const lng = parseFloat(p.lng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      container.innerHTML = '<div id="propertyMiniMap"></div>';
+      const map = L.map('propertyMiniMap', { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 15);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="background:#0e0e0f;color:white;padding:6px 12px;border-radius:20px;font-weight:700;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)">$${p.monthly_rent.toLocaleString()}/mo</div>`,
+        iconAnchor: [45, 16], iconSize: [90, 32]
+      });
+      L.marker([lat, lng], { icon }).addTo(map).bindPopup(`<b>${p.title}</b><br>${p.address}`);
+      return;
+    }
+  }
+  // Fallback: Google embed
+  const mapAddr = encodeURIComponent(`${p.address}, ${p.city}, ${p.state} ${p.zip}`);
+  document.getElementById('mapAddressLabel').textContent = `${p.address}, ${p.city}`;
+  container.innerHTML = `<iframe src="https://maps.google.com/maps?q=${mapAddr}&output=embed&z=15" title="Property location" loading="lazy" style="width:100%;height:100%;border:none"></iframe>`;
+}
+
+/* ── Gallery ── */
+function renderGallery(photos) {
+  const main = document.getElementById('galleryMain');
+  const thumbsEl = document.getElementById('galleryThumbs');
+  document.getElementById('galleryTotal').textContent = photos.length;
+  main.src = CONFIG.img(photos[0], 'gallery');
+  main.alt = 'Property photo 1';
+
+  if (photos.length > 1) {
+    thumbsEl.innerHTML = photos.map((url, i) => `
+      <div class="gallery-thumb ${i===0?'active':''}" data-idx="${i}">
+        <img src="${CONFIG.img(url,'thumb')}" alt="Photo ${i+1}" loading="lazy" decoding="async">
+      </div>`).join('');
+    thumbsEl.querySelectorAll('.gallery-thumb').forEach(t =>
+      t.addEventListener('click', () => showPhoto(parseInt(t.dataset.idx))));
+  }
+
+  document.getElementById('galleryPrev').addEventListener('click', () =>
+    showPhoto((photoIndex - 1 + photos.length) % photos.length));
+  document.getElementById('galleryNext').addEventListener('click', () =>
+    showPhoto((photoIndex + 1) % photos.length));
+
+  // Keyboard nav
+  document.addEventListener('keydown', e => {
+    if (document.getElementById('lightbox').classList.contains('open')) {
+      if (e.key === 'ArrowLeft')  lightboxNav(-1);
+      if (e.key === 'ArrowRight') lightboxNav(1);
+      if (e.key === 'Escape')     closeLightbox();
+    }
+  });
+
+  // Expand button / click on main image → lightbox
+  document.getElementById('galleryExpand').addEventListener('click', () => openLightbox(photoIndex));
+  main.style.cursor = 'zoom-in';
+  main.addEventListener('click', () => openLightbox(photoIndex));
+
+  // Touch swipe on gallery
+  let touchX = 0;
+  main.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+  main.addEventListener('touchend', e => {
+    const diff = touchX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) showPhoto((photoIndex + (diff > 0 ? 1 : -1) + photos.length) % photos.length);
+  }, { passive: true });
+}
+
+function showPhoto(idx) {
+  photoIndex = idx;
+  const main = document.getElementById('galleryMain');
+  main.style.opacity = '0';
+  setTimeout(() => { main.src = CONFIG.img(allPhotos[idx], 'gallery'); main.style.opacity = '1'; }, 150);
+  main.style.transition = 'opacity 150ms';
+  document.getElementById('galleryCurrent').textContent = idx + 1;
+  document.querySelectorAll('.gallery-thumb').forEach((t, i) => t.classList.toggle('active', i === idx));
+}
+
+/* ── Lightbox ── */
+function openLightbox(idx) {
+  const lb = document.getElementById('lightbox');
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  lightboxShow(idx);
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function lightboxShow(idx) {
+  photoIndex = idx;
+  document.getElementById('lightboxImg').src = CONFIG.img(allPhotos[idx], 'lightbox');
+  document.getElementById('lightboxCounter').textContent = `${idx+1} / ${allPhotos.length}`;
+}
+
+function lightboxNav(dir) {
+  lightboxShow((photoIndex + dir + allPhotos.length) % allPhotos.length);
+}
+
+document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+document.getElementById('lightboxPrev').addEventListener('click', () => lightboxNav(-1));
+document.getElementById('lightboxNext').addEventListener('click', () => lightboxNav(1));
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target === document.getElementById('lightbox')) closeLightbox();
+});
+
+/* ── Inquiry ── */
+let inquiryCooldown = false;
+document.getElementById('sendInquiryBtn').addEventListener('click', async () => {
+  if (inquiryCooldown) { showToast('Please wait before sending another message.', 'info'); return; }
+
+  const name    = document.getElementById('inqName').value.trim();
+  const email   = document.getElementById('inqEmail').value.trim();
+  const phone   = document.getElementById('inqPhone').value.trim();
+  const message = document.getElementById('inqMessage').value.trim();
+  if (!name || !email || !message) { showToast('Please fill in name, email, and message.', 'error'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Please enter a valid email address.', 'error'); return; }
+
+  const btn = document.getElementById('sendInquiryBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Sending\u2026';
+
+  // Use CP.Inquiries.submit() so the edge function fires confirmation + landlord emails.
+  const { error } = await CP.Inquiries.submit({
+    property_id:  currentProperty.id,
+    tenant_name:  name,
+    tenant_email: email,
+    tenant_phone: phone || null,
+    message
+  });
+
+  if (error) {
+    showToast('Failed to send. Please try again.', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
+  } else {
+    showToast('Message sent! The landlord will be in touch soon.', 'success');
+    btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
+
+    // Clear form fields after successful send
+    document.getElementById('inqName').value    = '';
+    document.getElementById('inqEmail').value   = '';
+    document.getElementById('inqPhone').value   = '';
+    document.getElementById('inqMessage').value = '';
+
+    // 60-second rate limit cooldown
+    inquiryCooldown = true;
+    let secs = 60;
+    const countdown = setInterval(() => {
+      secs--;
+      if (secs <= 0) {
+        clearInterval(countdown);
+        inquiryCooldown = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
+        btn.disabled = false;
+      } else {
+        btn.innerHTML = `<i class="fas fa-clock"></i> Wait ${secs}s`;
+      }
+    }, 1000);
+  }
+});
+
+/* ── Share & Save ── */
+window.shareProp = () => {
+  if (navigator.share) navigator.share({ title: currentProperty?.title, url: window.location.href });
+  else { navigator.clipboard.writeText(window.location.href); showToast('Link copied!', 'success'); }
+};
+
+function toggleSave(id, btn) {
+  if (savedIds.has(id)) {
+    savedIds.delete(id); btn.innerHTML = '<i class="far fa-heart"></i> Save';
+  } else {
+    savedIds.add(id); btn.innerHTML = '<i class="fas fa-heart" style="color:var(--crimson)"></i> Saved';
+    showToast('Property saved!', 'success');
+  }
+  localStorage.setItem('cp_saved', JSON.stringify([...savedIds]));
+}
+
+/* ── Mobile Drawer ── */
+function setupMobileDrawer() {
+  const toggle = document.getElementById('mobileToggle');
+  const drawer = document.getElementById('navDrawer');
+  const overlay = document.getElementById('drawerOverlay');
+  const close = document.getElementById('drawerClose');
+  function openDrawer() { overlay.style.display='block'; requestAnimationFrame(() => { overlay.classList.add('open'); drawer.classList.add('open'); }); document.body.style.overflow='hidden'; }
+  function closeDrawer() { overlay.classList.remove('open'); drawer.classList.remove('open'); document.body.style.overflow=''; setTimeout(() => overlay.style.display='none', 400); }
+  toggle.addEventListener('click', openDrawer);
+  close.addEventListener('click', closeDrawer);
+  overlay.addEventListener('click', closeDrawer);
+}
+
+function setupNavScroll() {
+  const nav = document.getElementById('mainNav');
+  window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 10), { passive: true });
+}
+
+/* ── Helpers ── */
+function setMeta(id, val) { document.getElementById(id)?.setAttribute('content', val); }
+function formatDate(str) {
+  // Append T00:00:00 so JS parses as local time, not UTC midnight (avoids day-off bug)
+  const d = new Date(str.includes('T') ? str : str + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icons = { success: 'check-circle', error: 'exclamation-circle', info: 'info-circle' };
+  t.innerHTML = `<i class="fas fa-${icons[type] || 'info-circle'}"></i> ${msg}`;
+  c.appendChild(t);
+  const duration = type === 'error' ? 5000 : 3200;
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(6px) scale(0.97)';
+    t.style.transition = 'all 280ms';
+    setTimeout(() => t.remove(), 280);
+  }, duration);
+}
+
+</script>
+</body>
+</html>
