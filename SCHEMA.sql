@@ -536,6 +536,9 @@ create policy "properties_landlord_read" on properties
 create policy "properties_landlord_write" on properties
   for all using (
     landlord_id = (select id from landlords where user_id = auth.uid())
+  )
+  with check (
+    landlord_id = (select id from landlords where user_id = auth.uid())
   );
 
 create policy "inquiries_admin_all" on inquiries

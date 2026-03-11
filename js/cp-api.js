@@ -325,7 +325,7 @@ window.buildApplyURL    = buildApplyURL;
 window.incrementCounter = incrementCounter;
 
 export async function getSession()          { return CP.Auth.getSession(); }
-export async function getLandlordProfile()  { const s = await CP.Auth.getSession(); if (!s) return null; return (await CP.Landlords.getProfile(s.user.id)).data; }
+export async function getLandlordProfile()  { const user = await CP.Auth.getUser(); if (!user) return null; return (await CP.Landlords.getProfile(user.id)).data; }
 export async function requireAuth(r)        { return CP.Auth.requireLandlord(r); }
 export async function signIn(e, p)          { const { data, error } = await CP.sb().auth.signInWithPassword({ email: e, password: p }); if (error) throw error; return data; }
 export async function signUp(email, password, profile) {

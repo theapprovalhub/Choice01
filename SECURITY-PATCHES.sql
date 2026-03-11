@@ -119,3 +119,28 @@ END $$;
 
 -- ── 5. Done ─────────────────────────────────────────────────
 SELECT 'Security patches applied successfully.' AS result;
+
+
+-- ── 5. Explicit WITH CHECK on properties_landlord_write ─────
+-- For INSERT statements, Postgres evaluates WITH CHECK, not USING.
+-- The previous policy had no WITH CHECK, so inserts relied on implicit
+-- permissive fallback. This makes the constraint explicit and secure.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename  = 'properties'
+      AND policyname = 'properties_landlord_write'
+  ) THEN
+    EXECUTE 'DROP POLICY "properties_landlord_write" ON properties';
+  END IF;
+END $$;
+
+CREATE POLICY "properties_landlord_write" ON properties
+  FOR ALL USING (
+    landlord_id = (SELECT id FROM landlords WHERE user_id = auth.uid())
+  )
+  WITH CHECK (
+    landlord_id = (SELECT id FROM landlords WHERE user_id = auth.uid())
+  );
